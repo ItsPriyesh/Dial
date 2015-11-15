@@ -1,0 +1,18 @@
+{
+  "uuid": "8a4b77fe-0ea9-4282-a3dd-59cc05feed06",
+  "shortName": "Dial",
+  "longName": "Dial",
+  "companyName": "MakeAwesomeHappen",
+  "versionLabel": "1.0",
+  "sdkVersion": "3",
+  "targetPlatforms": ["aplite", "basalt"],
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
