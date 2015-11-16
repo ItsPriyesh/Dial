@@ -1,60 +1,73 @@
 #include <pebble.h>
 
-static Window *window;
-static TextLayer *text_layer;
+static Window *s_main_window;
+static BitmapLayer *s_background_layer;
+static GBitmap *s_background_bitmap;
 
-static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Select");
+#define BACKGROUND_WIDTH 1366
+#define BACKGROUND_END 1350
+#define SCREEN_WIDTH 144
+#define SCREEN_HEIGHT 168
+
+static void draw_clock(struct tm *tick_time) {
+  const int64_t mins_in_day = 24 * 60;
+  const int64_t mins_since_midnight = tick_time->tm_hour * 60 + tick_time->tm_min;
+  const int64_t background_x_offset = mins_since_midnight * BACKGROUND_END / mins_in_day;
+
+  const GRect frame = GRect(-background_x_offset + SCREEN_WIDTH / 2, 0, BACKGROUND_WIDTH, SCREEN_HEIGHT);
+  layer_set_frame((Layer*) s_background_layer, frame);
 }
 
-static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Up");
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+  draw_clock(tick_time);
 }
 
-static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Down");
+static void pin_layer_update_proc(Layer *layer, GContext *ctx) {
+  graphics_context_set_fill_color(ctx, GColorOrange);
+  graphics_fill_rect(ctx, GRect(71, 0, 2, 101), 0, 0);
 }
 
-static void click_config_provider(void *context) {
-  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
-  window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
-  window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
-}
-
-static void window_load(Window *window) {
+static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  text_layer = text_layer_create((GRect) { .origin = { 0, 72 }, .size = { bounds.size.w, 20 } });
-  text_layer_set_text(text_layer, "Press a button");
-  text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(text_layer));
+  Layer *pin_layer = layer_create(bounds);
+  layer_set_update_proc(pin_layer, pin_layer_update_proc);
+
+  s_background_layer = bitmap_layer_create(bounds);
+  s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BACKGROUND);
+  bitmap_layer_set_bitmap(s_background_layer, s_background_bitmap);
+
+  layer_add_child(window_layer, (Layer*) s_background_layer);
+  layer_add_child(window_layer, pin_layer);
 }
 
-static void window_unload(Window *window) {
-  text_layer_destroy(text_layer);
+static void main_window_unload(Window *window) {
+  bitmap_layer_destroy(s_background_layer);
+  gbitmap_destroy(s_background_bitmap);
 }
 
-static void init(void) {
-  window = window_create();
-  window_set_click_config_provider(window, click_config_provider);
-  window_set_window_handlers(window, (WindowHandlers) {
-    .load = window_load,
-    .unload = window_unload,
+static void init() {
+  s_main_window = window_create();
+  window_set_background_color(s_main_window, GColorBlack);
+  window_set_window_handlers(s_main_window, (WindowHandlers) {
+    .load = main_window_load,
+    .unload = main_window_unload
   });
-  const bool animated = true;
-  window_stack_push(window, animated);
+  window_stack_push(s_main_window, true);
+
+  time_t current_time = time(NULL);
+  draw_clock(localtime(&current_time));
+
+  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
 }
 
-static void deinit(void) {
-  window_destroy(window);
+static void deinit() {
+  window_destroy(s_main_window);
 }
 
 int main(void) {
   init();
-
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Done initializing, pushed window: %p", window);
-
   app_event_loop();
   deinit();
 }

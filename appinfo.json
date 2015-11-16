@@ -2,17 +2,23 @@
   "uuid": "8a4b77fe-0ea9-4282-a3dd-59cc05feed06",
   "shortName": "Dial",
   "longName": "Dial",
-  "companyName": "MakeAwesomeHappen",
+  "companyName": "Priyesh Patel",
   "versionLabel": "1.0",
   "sdkVersion": "3",
-  "targetPlatforms": ["aplite", "basalt"],
+  "targetPlatforms": ["basalt"],
   "watchapp": {
-    "watchface": false
+    "watchface": true
   },
   "appKeys": {
     "dummy": 0
   },
   "resources": {
-    "media": []
+    "media": [
+      {
+        "type": "png",
+        "name": "BACKGROUND",
+        "file": "background.png"
+      }
+    ]
   }
 }
