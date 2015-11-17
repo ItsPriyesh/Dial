@@ -1,21 +1,22 @@
 #include <pebble.h>
 
 static Window *s_main_window;
-static BitmapLayer *s_background_layer;
+static BitmapLayer *s_background_layers[2];
 static GBitmap *s_background_bitmap;
 
-#define BACKGROUND_WIDTH 1366
-#define BACKGROUND_END 1350
-#define SCREEN_WIDTH 144
-#define SCREEN_HEIGHT 168
+#define BACKGROUND_WIDTH (1366)
+#define SCREEN_WIDTH (144)
+#define SCREEN_HEIGHT (168)
 
 static void draw_clock(struct tm *tick_time) {
   const int64_t mins_in_day = 24 * 60;
   const int64_t mins_since_midnight = tick_time->tm_hour * 60 + tick_time->tm_min;
-  const int64_t background_x_offset = mins_since_midnight * BACKGROUND_END / mins_in_day;
+  const int64_t background_x_offset = mins_since_midnight * BACKGROUND_WIDTH * 2 / mins_in_day;
 
-  const GRect frame = GRect(-background_x_offset + SCREEN_WIDTH / 2, 0, BACKGROUND_WIDTH, SCREEN_HEIGHT);
-  layer_set_frame((Layer*) s_background_layer, frame);
+  GRect frame = GRect((-background_x_offset) + (SCREEN_WIDTH / 2), 0, BACKGROUND_WIDTH, SCREEN_HEIGHT);
+  layer_set_frame(bitmap_layer_get_layer(s_background_layers[0]), frame);
+  frame.origin.x += frame.size.w;
+  layer_set_frame(bitmap_layer_get_layer(s_background_layers[1]), frame);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -34,16 +35,19 @@ static void main_window_load(Window *window) {
   Layer *pin_layer = layer_create(bounds);
   layer_set_update_proc(pin_layer, pin_layer_update_proc);
 
-  s_background_layer = bitmap_layer_create(bounds);
   s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BACKGROUND);
-  bitmap_layer_set_bitmap(s_background_layer, s_background_bitmap);
-
-  layer_add_child(window_layer, (Layer*) s_background_layer);
+  for (unsigned i = 0; i < ARRAY_LENGTH(s_background_layers); i++) {
+    s_background_layers[i] = bitmap_layer_create(bounds);
+    bitmap_layer_set_bitmap(s_background_layers[i], s_background_bitmap);
+    layer_add_child(window_layer, (Layer*) s_background_layers[i]);
+  }
   layer_add_child(window_layer, pin_layer);
 }
 
 static void main_window_unload(Window *window) {
-  bitmap_layer_destroy(s_background_layer);
+  for (unsigned i = 0; i < ARRAY_LENGTH(s_background_layers); i++) {
+    bitmap_layer_destroy(s_background_layers[i]);
+  }
   gbitmap_destroy(s_background_bitmap);
 }
 
@@ -59,7 +63,7 @@ static void init() {
   time_t current_time = time(NULL);
   draw_clock(localtime(&current_time));
 
-  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
 }
 
 static void deinit() {
