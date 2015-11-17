@@ -5,8 +5,8 @@ static BitmapLayer *s_background_layers[2];
 static GBitmap *s_background_bitmap;
 
 #define BACKGROUND_WIDTH (1366)
-#define SCREEN_WIDTH (144)
-#define SCREEN_HEIGHT (168)
+#define SCREEN_WIDTH (PBL_IF_ROUND_ELSE(180, 144))
+#define SCREEN_HEIGHT (PBL_IF_ROUND_ELSE(180, 168))
 
 static void draw_clock(struct tm *tick_time) {
   const int64_t mins_in_day = 24 * 60;
@@ -25,7 +25,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 static void pin_layer_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_fill_color(ctx, GColorOrange);
-  graphics_fill_rect(ctx, GRect(71, 0, 2, 101), 0, 0);
+  graphics_fill_rect(ctx, GRect(SCREEN_WIDTH / 2 - 1, 0, 2, SCREEN_HEIGHT * 0.6), 0, 0);
 }
 
 static void main_window_load(Window *window) {
