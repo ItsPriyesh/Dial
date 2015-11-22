@@ -10,7 +10,7 @@ static GBitmap *s_background_bitmap;
 
 static void draw_clock(struct tm *tick_time) {
   const int64_t mins_in_day = 24 * 60;
-  const int64_t mins_since_midnight = 23 * 60 + 40;
+  const int64_t mins_since_midnight = tick_time->tm_hour * 60 + tick_time->tm_min;
   const int64_t background_x_offset = mins_since_midnight * BACKGROUND_WIDTH * 2 / mins_in_day;
 
   for (int i = 0; i < 4; i++) {
