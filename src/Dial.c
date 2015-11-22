@@ -1,7 +1,7 @@
 #include <pebble.h>
 
 static Window *s_main_window;
-static BitmapLayer *s_background_layers[2];
+static BitmapLayer *s_background_layers[4];
 static GBitmap *s_background_bitmap;
 
 #define BACKGROUND_WIDTH (1366)
@@ -10,13 +10,13 @@ static GBitmap *s_background_bitmap;
 
 static void draw_clock(struct tm *tick_time) {
   const int64_t mins_in_day = 24 * 60;
-  const int64_t mins_since_midnight = tick_time->tm_hour * 60 + tick_time->tm_min;
+  const int64_t mins_since_midnight = 23 * 60 + 40;
   const int64_t background_x_offset = mins_since_midnight * BACKGROUND_WIDTH * 2 / mins_in_day;
 
-  GRect frame = GRect((-background_x_offset) + (SCREEN_WIDTH / 2), 0, BACKGROUND_WIDTH, SCREEN_HEIGHT);
-  layer_set_frame(bitmap_layer_get_layer(s_background_layers[0]), frame);
-  frame.origin.x += frame.size.w;
-  layer_set_frame(bitmap_layer_get_layer(s_background_layers[1]), frame);
+  for (int i = 0; i < 4; i++) {
+    GRect frame = GRect((-background_x_offset) + (SCREEN_WIDTH / 2) + BACKGROUND_WIDTH * (i - 1), 0, BACKGROUND_WIDTH, SCREEN_HEIGHT);
+    layer_set_frame(bitmap_layer_get_layer(s_background_layers[i]), frame);
+  }
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
