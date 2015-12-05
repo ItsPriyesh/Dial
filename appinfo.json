@@ -18,6 +18,11 @@
         "type": "png",
         "name": "BACKGROUND",
         "file": "background.png"
+      },
+      {
+        "type": "font",
+        "name": "MEDIUM_14",
+        "file": "Medium.ttf"
       }
     ]
   }
