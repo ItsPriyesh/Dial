@@ -16,6 +16,8 @@ static TextLayer *s_date_layer;
 static GRect date_frame_onscreen;
 static GRect date_frame_offscreen;
 
+bool dateIsAnimating = 0;
+
 static const char *days_of_week[] = {
   "SUN",
   "MON",
@@ -26,7 +28,14 @@ static const char *days_of_week[] = {
   "SAT",
 };
 
+static void date_animation_stopped_handler(Animation *animation, bool finished, void *context) {
+  dateIsAnimating = 0;
+}
+
 static void animate_date() {
+  if (dateIsAnimating) return;
+  dateIsAnimating = 1;
+ 
   PropertyAnimation *in = property_animation_create_layer_frame(
     (Layer*) s_date_layer, &date_frame_offscreen, &date_frame_onscreen);
   animation_set_duration((Animation*) in, DATE_ANIMATION_DURATION_IN);
@@ -37,6 +46,9 @@ static void animate_date() {
     (Layer*) s_date_layer, &date_frame_onscreen, &date_frame_offscreen);
   animation_set_duration((Animation*) out, DATE_ANIMATION_DURATION_OUT);
   animation_set_delay((Animation*) out, DATE_VISIBILITY_DURATION);
+  animation_set_handlers((Animation*) out, (AnimationHandlers) {
+    .stopped = date_animation_stopped_handler
+  }, NULL);
   animation_set_curve((Animation*) out, AnimationCurveEaseIn);
   animation_schedule((Animation*) out);
 }
