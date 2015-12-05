@@ -6,7 +6,7 @@
 
 #define DATE_ANIMATION_DURATION_IN (400)
 #define DATE_ANIMATION_DURATION_OUT (200)
-#define DATE_VISIBILITY_DURATION (5000)
+#define DATE_VISIBILITY_DURATION (4000)
 
 static Window *s_main_window;
 static BitmapLayer *s_background_layers[4];
