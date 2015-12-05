@@ -4,10 +4,17 @@
 #define SCREEN_WIDTH (PBL_IF_ROUND_ELSE(180, 144))
 #define SCREEN_HEIGHT (PBL_IF_ROUND_ELSE(180, 168))
 
+#define DATE_ANIMATION_DURATION_IN (400)
+#define DATE_ANIMATION_DURATION_OUT (200)
+#define DATE_VISIBILITY_DURATION (5000)
+
 static Window *s_main_window;
 static BitmapLayer *s_background_layers[4];
 static GBitmap *s_background_bitmap;
 static TextLayer *s_date_layer;
+
+static GRect date_frame_onscreen;
+static GRect date_frame_offscreen;
 
 static const char *days_of_week[] = {
   "SUN",
@@ -18,6 +25,21 @@ static const char *days_of_week[] = {
   "FRI",
   "SAT",
 };
+
+static void animate_date() {
+  PropertyAnimation *in = property_animation_create_layer_frame(
+    (Layer*) s_date_layer, &date_frame_offscreen, &date_frame_onscreen);
+  animation_set_duration((Animation*) in, DATE_ANIMATION_DURATION_IN);
+  animation_set_curve((Animation*) in, AnimationCurveEaseInOut);
+  animation_schedule((Animation*) in);
+
+  PropertyAnimation *out = property_animation_create_layer_frame(
+    (Layer*) s_date_layer, &date_frame_onscreen, &date_frame_offscreen);
+  animation_set_duration((Animation*) out, DATE_ANIMATION_DURATION_OUT);
+  animation_set_delay((Animation*) out, DATE_VISIBILITY_DURATION);
+  animation_set_curve((Animation*) out, AnimationCurveEaseIn);
+  animation_schedule((Animation*) out);
+}
 
 static void draw_clock(struct tm *tick_time) {
   const int64_t mins_in_day = 24 * 60;
@@ -35,6 +57,10 @@ static void draw_date(struct tm *tick_time) {
   snprintf(buffer, sizeof(buffer), "%s %d", days_of_week[tick_time->tm_wday], tick_time->tm_mday);
   APP_LOG(APP_LOG_LEVEL_DEBUG, buffer);
   text_layer_set_text(s_date_layer, buffer);
+}
+
+static void tap_handler(AccelAxisType axis, int32_t direction) {
+  animate_date();
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -61,9 +87,11 @@ static void main_window_load(Window *window) {
     layer_add_child(window_layer, (Layer*) s_background_layers[i]);
   }
 
+  date_frame_onscreen = GRect(SCREEN_WIDTH / 2 + 2, PBL_IF_ROUND_ELSE(30, 20), PBL_IF_ROUND_ELSE(67, SCREEN_WIDTH / 2 - 2), 15);
+  date_frame_offscreen = (GRect) { .origin = GPoint(date_frame_onscreen.origin.x, -50), .size = date_frame_onscreen.size };
+  
   GFont date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_MEDIUM_14));
-  GRect date_frame = GRect(SCREEN_WIDTH / 2 + 2, PBL_IF_ROUND_ELSE(30, 20), PBL_IF_ROUND_ELSE(67, SCREEN_WIDTH / 2 - 2), 15);
-  s_date_layer = text_layer_create(date_frame);
+  s_date_layer = text_layer_create(date_frame_offscreen);
   text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
   text_layer_set_text_color(s_date_layer, GColorWhite);
   text_layer_set_font(s_date_layer, date_font);
@@ -93,8 +121,9 @@ static void init() {
   time_t current_time = time(NULL);
   draw_clock(localtime(&current_time));
   draw_date(localtime(&current_time));
-  
+
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  accel_tap_service_subscribe(tap_handler);
 }
 
 static void deinit() {
